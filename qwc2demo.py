@@ -14,13 +14,13 @@ def search():
         "results": [
             {
                 "searchtable": None,
-                "displaytext": "Bodenbedeckungsname",
-                "bbox": None
+                "display_name": "Bodenbedeckungsname",
+                "boundingbox": [0, 0, 0, 0]
             },
             {
                 "searchtable": "av_user.suchtabelle",
-                "displaytext": "Greifensee (Niederuster, Gew\u00e4sser stehendes)",
-                "bbox": [
+                "display_name": "Greifensee (Niederuster, Gew\u00e4sser stehendes)",
+                "boundingbox": [
                     693792.00009343,
                     242423.70345183,
                     695931.8623783,
@@ -29,8 +29,8 @@ def search():
             },
             {
                 "searchtable": "av_user.suchtabelle",
-                "displaytext": "Greifensee (Riedikon, Gew\u00e4sser stehendes)",
-                "bbox": [
+                "display_name": "Greifensee (Riedikon, Gew\u00e4sser stehendes)",
+                "boundingbox": [
                     693792.00009343,
                     242423.70345183,
                     695931.8623783,
@@ -39,13 +39,13 @@ def search():
             },
             {
                 "searchtable": None,
-                "displaytext": "Flurnamen",
-                "bbox": None
+                "display_name": "Flurnamen",
+                "boundingbox": None
             },
             {
                 "searchtable": "av_user.suchtabelle",
-                "displaytext": "Greifensee (Flurname, Uster)",
-                "bbox": [
+                "display_name": "Greifensee (Flurname, Uster)",
+                "boundingbox": [
                     693792.00009343,
                     242404.13851517,
                     695957.0926848,
@@ -54,13 +54,13 @@ def search():
             },
             {
                 "searchtable": None,
-                "displaytext": "Strassen",
-                "bbox": None
+                "display_name": "Strassen",
+                "boundingbox": None
             },
             {
                 "searchtable": "av_user.suchtabelle",
-                "displaytext": "Greifenseestrasse (Strasse, Uster)",
-                "bbox": [
+                "display_name": "Greifenseestrasse (Strasse, Uster)",
+                "boundingbox": [
                     693868.82257669,
                     247149.7305494,
                     694092.20209108,
@@ -75,7 +75,7 @@ def search():
 @app.route("/getSearchGeom")
 def getSearchGeom():
     # QWC API Uster
-    # https://webgis.uster.ch/wsgi/getSearchGeom.wsgi?&searchtable=av_user.suchtabelle&displaytext=1001%20(Parzellennummer)
+    # https://webgis.uster.ch/wsgi/getSearchGeom.wsgi?&searchtable=av_user.suchtabelle&display_name=1001%20(Parzellennummer)
     return 'POLYGON((693957.29 246878.75,693944.31 246875.8,693941.144 246877.851,693959.07 246904.701,693965.016 246900.731,693962.24 246896.572,693964.402 246895.129,693967.179 246899.287,693972.777 246895.549,693972.69 246895.369,693961.67 246876.32,693957.29 246878.75))'
 
 
