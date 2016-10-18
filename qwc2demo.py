@@ -30,7 +30,7 @@ def getProjectData(projectfile):
     doc.setContent(file)
 
     # CRS & Extent
-    crs = doc.firstChildElement("qgis").firstChildElement("mapcanvas").firstChildElement("destinationsrs").firstChildElement("spatialrefsys").firstChildElement("authid").text()
+    crs = str(doc.firstChildElement("qgis").firstChildElement("mapcanvas").firstChildElement("destinationsrs").firstChildElement("spatialrefsys").firstChildElement("authid").text())
     extent = doc.firstChildElement("qgis").firstChildElement("mapcanvas").firstChildElement("extent")
     xmin = float(extent.firstChildElement("xmin").text() or "0")
     xmax = float(extent.firstChildElement("xmax").text() or "0")
@@ -47,15 +47,15 @@ def getProjectData(projectfile):
     kwlists = doc.elementsByTagName("WMSKeywordList")
     keywords = ""
     if not kwlists.isEmpty():
-        keywords = kwlists.at(0).firstChildElement("value").text()
+        keywords = str(kwlists.at(0).firstChildElement("value").text())
 
     # Layers
     layerlist = doc.elementsByTagName("maplayer")
     layers = []
     queryable = []
     for i in range(0, layerlist.size()):
-        shortname = layerlist.at(i).firstChildElement("shortname").text()
-        layername = layerlist.at(i).firstChildElement("layername").text()
+        shortname = str(layerlist.at(i).firstChildElement("shortname").text())
+        layername = str(layerlist.at(i).firstChildElement("layername").text())
         name = shortname if shortname else layername
         id = layerlist.at(i).firstChildElement("id").text()
         layers.append(name)
