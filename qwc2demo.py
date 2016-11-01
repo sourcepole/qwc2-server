@@ -7,7 +7,10 @@ from PyQt4.QtCore import *
 from PyQt4.QtXml import *
 import hashlib
 import random
-from urllib.parse import urlparse, parse_qs
+try:
+    from urllib.parse import urlparse, parse_qs
+except:
+    from urlparse import urlparse, parse_qs
 
 app = Flask(__name__)
 CORS(app)
