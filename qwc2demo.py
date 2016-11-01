@@ -5,15 +5,45 @@ import os
 import base64
 from PyQt4.QtCore import *
 from PyQt4.QtXml import *
+import hashlib
+import random
+from urllib.parse import urlparse, parse_qs
 
 app = Flask(__name__)
 CORS(app)
+
+permalinks = {}
 
 @app.route("/proxy")
 def proxy():
     url = request.args['url']
     req = requests.get(url, stream=True, timeout=5)
     return Response(stream_with_context(req.iter_content()), content_type = req.headers['content-type'])
+
+@app.route("/createpermalink")
+def createpermalink():
+    url = request.args['url']
+    parts = urlparse(url)
+    hexdigest = hashlib.sha224(parts.query.encode("utf-8")).hexdigest()[0:9]
+    while hexdigest in permalinks and permalinks[hexdigest] != parts.query:
+        hexdigest = hashlib.sha224(parts.query.encode("utf-8") + str(random.random())).hexdigest()[0:9]
+    permalinks[hexdigest] = parts.query
+    result = {
+        "permalink": parts.scheme + "://" + parts.netloc + parts.path + "?k=" + hexdigest,
+        "permalinks": permalinks,
+    }
+    return jsonify(**result)
+
+@app.route("/resolvepermalink")
+def resolvepermalink():
+    key = request.args['key']
+    result = {}
+    if key in permalinks:
+        query = parse_qs(permalinks[key])
+        for key in query:
+            query[key] = query[key][0]
+        result['query'] = query
+    return jsonify(**result)
 
 @app.route("/search")
 def search():
