@@ -12,7 +12,7 @@ CORS(app)
 @app.route("/proxy")
 def proxy():
     url = request.args['url']
-    req = requests.get(url, stream = True)
+    req = requests.get(url, stream=True, timeout=5)
     return Response(stream_with_context(req.iter_content()), content_type = req.headers['content-type'])
 
 @app.route("/search")
