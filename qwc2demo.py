@@ -16,9 +16,15 @@ permalinks = {}
 
 @app.route("/proxy")
 def proxy():
-    url = request.args['url']
+    url = request.args.get('url')
+    filename = request.args.get('filename')
     req = requests.get(url, stream=True, timeout=5)
-    return Response(stream_with_context(req.iter_content()), content_type = req.headers['content-type'])
+    response = Response(stream_with_context(req.iter_content()))
+    if filename:
+        response.headers['content-disposition'] = 'attachment; filename=' + filename
+    else:
+        response.headers['content-type'] = req.headers['content-type']
+    return response
 
 @app.route("/createpermalink")
 def createpermalink():
