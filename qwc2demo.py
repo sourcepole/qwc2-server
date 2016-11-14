@@ -2,9 +2,6 @@ from flask import Flask, request, jsonify, Response, stream_with_context
 from flask_cors import CORS
 import requests
 import os
-import base64
-from PyQt4.QtCore import *
-from PyQt4.QtXml import *
 import hashlib
 import random
 try:
