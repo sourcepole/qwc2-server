@@ -14,12 +14,15 @@ CORS(app)
 
 permalinks = {}
 
-@app.route("/proxy")
+@app.route("/proxy", methods=['GET','POST'])
 def proxy():
     url = request.args.get('url')
     filename = request.args.get('filename')
-    req = requests.get(url, stream=True, timeout=5)
-    response = Response(stream_with_context(req.iter_content()))
+    if request.method == 'POST':
+        req = requests.post(url, stream=True, timeout=30, data=request.form)
+    else:
+        req = requests.get(url, stream=True, timeout=10)
+    response = Response(stream_with_context(req.iter_content(chunk_size=1024)))
     if filename:
         response.headers['content-disposition'] = 'attachment; filename=' + filename
     else:
