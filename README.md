@@ -30,8 +30,3 @@ Install dependencies:
 Run demo server:
 
     python qwc2demo.py
-
-REST sample requests
-
-    # Search
-    curl 'http://localhost:5000/search?query=Greifensee'
