@@ -1,7 +1,7 @@
 QWC2 Server
 ===========
 
-Certain QGIS Web Client (QWC2) components call web services, e.g. for searching.
+Certain QGIS Web Client (QWC2) components call web services, e.g. for generating permalinks.
 
 This repository contains the API specification and a demo server for testing.
 
