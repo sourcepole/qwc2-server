@@ -11,9 +11,16 @@ The demo server is a [Flask](http://flask.pocoo.org/) application, written in Py
 API
 ---
 
-### Search
+### `/createpermalink`
 
-...
+`createpermalink?url=<url>`
+- *url*: the url for which to generate a permalink
+- *output*: a json document `{permalink: <permalink_url>}`
+
+### `/resolvepermalink`
+`resolvepermalink?key=<key>`
+- *key*: the key query parameter of the permalink url
+- *output*: a json document containing all query parameters which were encoded in the permalink key
 
 
 Setup
@@ -26,6 +33,7 @@ Install dependencies:
 
     # Flask from PyPI
     pip install --user flask
+    pip install --user Flask-Cors
 
 Run demo server:
 
