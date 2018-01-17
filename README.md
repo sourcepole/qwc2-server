@@ -13,14 +13,17 @@ API
 
 ### `/createpermalink`
 
-`createpermalink?url=<url>`
+`POST: createpermalink?url=<url>`
 - *url*: the url for which to generate a permalink
+- *payload*: a json document with additional state information
 - *output*: a json document `{permalink: <permalink_url>}`
 
 ### `/resolvepermalink`
-`resolvepermalink?key=<key>`
+`GET: resolvepermalink?key=<key>`
 - *key*: the key query parameter of the permalink url
-- *output*: a json document containing all query parameters which were encoded in the permalink key
+- *output*: a json document `{query: <query_parameters>, state: <state>}`
+  - `query_parameters`: all query parameters of the URL passed to `createpermalink`
+  - `state`: the state data passed as POST payload to `createpermalink`
 
 
 Setup
