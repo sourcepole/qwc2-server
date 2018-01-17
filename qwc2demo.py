@@ -35,7 +35,7 @@ def proxy():
         raise "Invalid operation"
     response = Response(stream_with_context(req.iter_content(chunk_size=1024)), status=req.status_code)
     if filename:
-        response.headers['content-disposition'] = 'filename=' + filename
+        response.headers['content-disposition'] = 'attachment; filename=' + filename
     response.headers['content-type'] = req.headers['content-type']
     return response
 
