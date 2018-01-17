@@ -4,6 +4,7 @@ import requests
 import os
 import hashlib
 import random
+import json
 try:
     from urllib.parse import urlparse, parse_qs
 except:
@@ -39,17 +40,26 @@ def proxy():
     response.headers['content-type'] = req.headers['content-type']
     return response
 
-@app.route("/createpermalink")
+@app.route("/createpermalink", methods=['GET','POST'])
 # createpermalink?url=<url>
 # url: the url for which to generate a permalink
 # output: a json document {permalink: <permalink_url>}
 def createpermalink():
     url = request.args['url']
     parts = urlparse(url)
-    hexdigest = hashlib.sha224(parts.query.encode("utf-8")).hexdigest()[0:9]
+    query = parse_qs(parts.query)
+    for key in query:
+        query[key] = query[key][0]
+    data = {
+        "query": query
+    }
+    if request.method == 'POST':
+        data["state"] = request.json
+    datastr = json.dumps(data).encode('utf-8')
+    hexdigest = hashlib.sha224(datastr).hexdigest()[0:9]
     while hexdigest in permalinks and permalinks[hexdigest] != parts.query:
-        hexdigest = hashlib.sha224(parts.query.encode("utf-8") + str(random.random())).hexdigest()[0:9]
-    permalinks[hexdigest] = parts.query
+        hexdigest = hashlib.sha224(datastr + str(random.random())).hexdigest()[0:9]
+    permalinks[hexdigest] = data
     result = {
         "permalink": parts.scheme + "://" + parts.netloc + parts.path + "?k=" + hexdigest
     }
@@ -61,13 +71,11 @@ def createpermalink():
 # output: a json document containing all query parameters which were encoded in the permalink key
 def resolvepermalink():
     key = request.args['key']
-    result = {}
+    data = {}
     if key in permalinks:
-        query = parse_qs(permalinks[key])
-        for key in query:
-            query[key] = query[key][0]
-        result['query'] = query
-    return jsonify(**result)
+        data = permalinks[key]
+    return jsonify(data)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
