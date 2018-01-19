@@ -16,12 +16,19 @@ CORS(app)
 
 
 @app.route("/", methods=['POST'])
+# `/`
+# payload: a json document as follows:
+#        {
+#            coordinates: [[x1,y1],[x2,y2],...],
+#            distances: [<dist_x1_x2>, <dist_x2_x3>, ...],
+#            projection: <EPSG:XXXX, projection of coordinates>,
+#            samples: <number of height samples to return>
+#        }
+# output: a json document with heights in meters: `{elevations: [h1, h2, ...]}`
 def elevation():
-    numSamples = 500
-
     query = request.json
 
-    if not isinstance(query, dict) or not "projection" in query or not "coordinates" in query or not "distances" in query:
+    if not isinstance(query, dict) or not "projection" in query or not "coordinates" in query or not "distances" in query or not "samples" in query:
         return jsonify({"error": "Bad query"})
 
     if not isinstance(query["coordinates"], list) or len(query["coordinates"]) == 0:
@@ -34,6 +41,11 @@ def elevation():
         epsg = int(re.match(r'epsg:(\d+)', query["projection"], re.IGNORECASE).group(1))
     except:
         return jsonify({"error": "Invalid projection specified"})
+
+    try:
+        numSamples = int(query["samples"])
+    except:
+        return jsonify({"error": "Invalid sample count specified"})
 
     inputSpatialRef = osr.SpatialReference()
     if inputSpatialRef.ImportFromEPSG(epsg) != ogr.OGRERR_NONE:
@@ -101,4 +113,4 @@ if __name__ == "__main__":
         print("Usage: %s dtm.tif" % sys.argv[0], file=sys.stderr)
         sys.exit(1)
 
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5002)
