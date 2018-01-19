@@ -7,6 +7,7 @@
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
+from itertools import accumulate
 from osgeo import gdal
 from osgeo import ogr
 from osgeo import osr
@@ -36,8 +37,8 @@ def elevation():
     if not isinstance(query, dict) or not "projection" in query or not "coordinates" in query or not "distances" in query or not "samples" in query:
         return jsonify({"error": "Bad query"})
 
-    if not isinstance(query["coordinates"], list) or len(query["coordinates"]) == 0:
-        return jsonify({"error": "Invalid or empty coordinates specified"})
+    if not isinstance(query["coordinates"], list) or len(query["coordinates"]) < 2:
+        return jsonify({"error": "Insufficient number of coordinates specified"})
 
     if not isinstance(query["distances"], list) or len(query["distances"]) != len(query["coordinates"]) - 1:
         return jsonify({"error": "Invalid distances specified"})
@@ -81,35 +82,42 @@ def elevation():
     elevations = []
 
     x = 0
+    i = 0
+    p1 = query["coordinates"][i]
+    p2 = query["coordinates"][i + 1]
+    dr = (p2[0] - p1[0], p2[1] - p1[1])
+    n = math.sqrt(dr[0] * dr[0] + dr[1] * dr[1])
+    dr = [dr[0] / n, dr[1] / n]
+    cumDistances = list(accumulate(query["distances"]))
+    cumDistances.insert(0, 0)
     totDistance = sum(query["distances"])
-    for i in range(0, len(query["coordinates"]) - 1):
-        if x >= query["distances"][i]:
-            continue
-        p1 = query["coordinates"][i]
-        p2 = query["coordinates"][i + 1]
-        dr = (p2[0] - p1[0], p2[1] - p1[1])
-        n = math.sqrt(dr[0] * dr[0] + dr[1] * dr[1])
-        dr = [dr[0] / n, dr[1] / n]
+    for s in range(0, numSamples):
+        while i + 2 < len(cumDistances) and x > cumDistances[i + 1]:
+            i += 1
+            p1 = query["coordinates"][i]
+            p2 = query["coordinates"][i + 1]
+            dr = (p2[0] - p1[0], p2[1] - p1[1])
+            n = math.sqrt(dr[0] * dr[0] + dr[1] * dr[1])
+            dr = [dr[0] / n, dr[1] / n]
 
-        while x < query["distances"][i]:
-            point = [p1[0] + x * dr[0], p1[1] + x * dr[1]]
-            pRaster = crsTransform.TransformPoint(point[0], point[1])
+        mu = x - cumDistances[i]
+        pRaster = crsTransform.TransformPoint(p1[0] + mu * dr[0], p1[1] + mu * dr[1])
 
-            # Geographic coordinates to pixel coordinates
-            col = ( -gtrans[0] * gtrans[5] + gtrans[2] * gtrans[3] - gtrans[2] * pRaster[1] + gtrans[5] * pRaster[0] ) / ( gtrans[1] * gtrans[5] - gtrans[2] * gtrans[4] )
-            row = ( -gtrans[0] * gtrans[4] + gtrans[1] * gtrans[3] - gtrans[1] * pRaster[1] + gtrans[4] * pRaster[0] ) / ( gtrans[2] * gtrans[4] - gtrans[1] * gtrans[5] )
+        # Geographic coordinates to pixel coordinates
+        col = ( -gtrans[0] * gtrans[5] + gtrans[2] * gtrans[3] - gtrans[2] * pRaster[1] + gtrans[5] * pRaster[0] ) / ( gtrans[1] * gtrans[5] - gtrans[2] * gtrans[4] )
+        row = ( -gtrans[0] * gtrans[4] + gtrans[1] * gtrans[3] - gtrans[1] * pRaster[1] + gtrans[4] * pRaster[0] ) / ( gtrans[2] * gtrans[4] - gtrans[1] * gtrans[5] )
 
-            data = band.ReadRaster(math.floor(col), math.floor(row), 2, 2, 2, 2, gdal.GDT_Float64)
-            if not data or len(data) != 32:
-                elevations.append(0.)
-            else:
-                values = struct.unpack('d' * 4, data)
-                kRow = row - math.floor( row );
-                kCol = col - math.floor( col );
-                value = ( values[0] * ( 1. - kCol ) + values[1] * kCol ) * ( 1. - kRow ) + ( values[2] * ( 1. - kCol ) + values[3] * kCol ) * ( kRow )
-                elevations.append(value)
-            x += totDistance / numSamples
-        x -= query["distances"][i]
+        data = band.ReadRaster(math.floor(col), math.floor(row), 2, 2, 2, 2, gdal.GDT_Float64)
+        if not data or len(data) != 32:
+            elevations.append(0.)
+        else:
+            values = struct.unpack('d' * 4, data)
+            kRow = row - math.floor( row );
+            kCol = col - math.floor( col );
+            value = ( values[0] * ( 1. - kCol ) + values[1] * kCol ) * ( 1. - kRow ) + ( values[2] * ( 1. - kCol ) + values[3] * kCol ) * ( kRow )
+            elevations.append(value)
+
+        x += totDistance / (numSamples - 1)
 
     return jsonify({"elevations": elevations})
 
