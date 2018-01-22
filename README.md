@@ -8,19 +8,6 @@ This repository contains some sample services for testing.
 The services are [Flask](http://flask.pocoo.org/) applications, written in Python.
 
 
-Setup
------
-
-Install dependencies:
-
-    # Flask package on Debian/Ubuntu
-    sudo apt-get install python-flask
-
-    # Flask from PyPI
-    pip install --user flask
-    pip install --user Flask-Cors
-
-
 Proxy service
 -------------
 
