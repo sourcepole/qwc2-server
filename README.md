@@ -61,7 +61,7 @@ API:
 
         {
             coordinates: [[x1,y1],[x2,y2],...],
-            distances: [<dist_x1_x2>, <dist_x2_x3>, ...],
+            distances: [<dist_p1_p2>, <dist_p2_p3>, ...],
             projection: <EPSG:XXXX, projection of coordinates>,
             samples: <number of height samples to return>
         }
