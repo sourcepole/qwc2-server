@@ -39,7 +39,7 @@ def createpermalink():
     datastr = json.dumps(data).encode('utf-8')
     hexdigest = hashlib.sha224(datastr).hexdigest()[0:9]
     while hexdigest in permalinks and permalinks[hexdigest] != parts.query:
-        hexdigest = hashlib.sha224(datastr + str(random.random())).hexdigest()[0:9]
+        hexdigest = hashlib.sha224(datastr + bytes(random.random())).hexdigest()[0:9]
     permalinks[hexdigest] = data
     result = {
         "permalink": parts.scheme + "://" + parts.netloc + parts.path + "?k=" + hexdigest
