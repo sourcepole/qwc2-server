@@ -19,10 +19,51 @@ import sys
 
 app = Flask(__name__)
 CORS(app)
+dataset = None
 
 
-@app.route("/", methods=['POST'])
-# `/`
+@app.route("/getelevation", methods=['GET'])
+# `/getelevation?pos=<pos>&crs=<crs>`
+# pos: the query position, as `x,y`
+# crs: the crs of the query position
+# output: a json document with the elevation in meters: `{elevation: h}`
+def getelevation():
+    try:
+        pos = request.args['pos'].split(',')
+        pos = [float(pos[0]), float(pos[1])]
+    except:
+        return jsonify({"error": "Invalid position specified"})
+    try:
+        epsg = int(re.match(r'epsg:(\d+)', request.args['crs'], re.IGNORECASE).group(1))
+    except:
+        return jsonify({"error": "Invalid projection specified"})
+
+    inputSpatialRef = osr.SpatialReference()
+    if inputSpatialRef.ImportFromEPSG(epsg) != ogr.OGRERR_NONE:
+        return jsonify({"error": "Failed to parse projection"})
+
+    crsTransform = osr.CoordinateTransformation(inputSpatialRef, dataset["spatialRef"])
+    gtrans = dataset["geoTransform"]
+
+    pRaster = crsTransform.TransformPoint(pos[0], pos[1])
+
+    # Geographic coordinates to pixel coordinates
+    col = ( -gtrans[0] * gtrans[5] + gtrans[2] * gtrans[3] - gtrans[2] * pRaster[1] + gtrans[5] * pRaster[0] ) / ( gtrans[1] * gtrans[5] - gtrans[2] * gtrans[4] )
+    row = ( -gtrans[0] * gtrans[4] + gtrans[1] * gtrans[3] - gtrans[1] * pRaster[1] + gtrans[4] * pRaster[0] ) / ( gtrans[2] * gtrans[4] - gtrans[1] * gtrans[5] )
+
+    data = dataset["band"].ReadRaster(math.floor(col), math.floor(row), 2, 2, 2, 2, gdal.GDT_Float64)
+    if not data or len(data) != 32:
+        return jsonify({"elevation": 0})
+    else:
+        values = struct.unpack('d' * 4, data)
+        kRow = row - math.floor( row );
+        kCol = col - math.floor( col );
+        value = ( values[0] * ( 1. - kCol ) + values[1] * kCol ) * ( 1. - kRow ) + ( values[2] * ( 1. - kCol ) + values[3] * kCol ) * ( kRow )
+        return jsonify({"elevation": value * dataset["unitsToMeters"]})
+
+
+@app.route("/getheightprofile", methods=['POST'])
+# `/getheightprofile`
 # payload: a json document as follows:
 #        {
 #            coordinates: [[x1,y1],[x2,y2],...],
@@ -31,7 +72,7 @@ CORS(app)
 #            samples: <number of height samples to return>
 #        }
 # output: a json document with heights in meters: `{elevations: [h1, h2, ...]}`
-def elevation():
+def getheightprofile():
     query = request.json
 
     if not isinstance(query, dict) or not "projection" in query or not "coordinates" in query or not "distances" in query or not "samples" in query:
@@ -57,27 +98,8 @@ def elevation():
     if inputSpatialRef.ImportFromEPSG(epsg) != ogr.OGRERR_NONE:
         return jsonify({"error": "Failed to parse projection"})
 
-    raster = gdal.Open(sys.argv[1])
-    if not raster:
-        return jsonify({"error": "Failed to open dataset"})
-
-    gtrans = raster.GetGeoTransform()
-    if not gtrans:
-        return jsonify({"error": "Failed to read dataset geotransform"})
-
-    rasterSpatialRef = osr.SpatialReference()
-    if rasterSpatialRef.ImportFromWkt(raster.GetProjectionRef()) != ogr.OGRERR_NONE:
-        return jsonify({"error": "Failed to parse dataset projection"})
-
-    band = raster.GetRasterBand(1)
-    if not band:
-        return jsonify({"error": "Failed to open dataset raster band"})
-
-    rasterUnitsToMeters = 1
-    if band.GetUnitType() == "ft":
-        rasterUnitsToMeters = 0.3048
-
-    crsTransform = osr.CoordinateTransformation(inputSpatialRef, rasterSpatialRef)
+    crsTransform = osr.CoordinateTransformation(inputSpatialRef, dataset["spatialRef"])
+    gtrans = dataset["geoTransform"]
 
     elevations = []
 
@@ -107,7 +129,7 @@ def elevation():
         col = ( -gtrans[0] * gtrans[5] + gtrans[2] * gtrans[3] - gtrans[2] * pRaster[1] + gtrans[5] * pRaster[0] ) / ( gtrans[1] * gtrans[5] - gtrans[2] * gtrans[4] )
         row = ( -gtrans[0] * gtrans[4] + gtrans[1] * gtrans[3] - gtrans[1] * pRaster[1] + gtrans[4] * pRaster[0] ) / ( gtrans[2] * gtrans[4] - gtrans[1] * gtrans[5] )
 
-        data = band.ReadRaster(math.floor(col), math.floor(row), 2, 2, 2, 2, gdal.GDT_Float64)
+        data = dataset["band"].ReadRaster(math.floor(col), math.floor(row), 2, 2, 2, 2, gdal.GDT_Float64)
         if not data or len(data) != 32:
             elevations.append(0.)
         else:
@@ -115,15 +137,48 @@ def elevation():
             kRow = row - math.floor( row );
             kCol = col - math.floor( col );
             value = ( values[0] * ( 1. - kCol ) + values[1] * kCol ) * ( 1. - kRow ) + ( values[2] * ( 1. - kCol ) + values[3] * kCol ) * ( kRow )
-            elevations.append(value)
+            elevations.append(value * dataset["unitsToMeters"])
 
         x += totDistance / (numSamples - 1)
 
     return jsonify({"elevations": elevations})
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
         print("Usage: %s dtm.tif" % sys.argv[0], file=sys.stderr)
         sys.exit(1)
+
+    raster = gdal.Open(sys.argv[1])
+    if not raster:
+        print("Failed to open dataset", file=sys.stderr)
+        sys.exit(1)
+
+    gtrans = raster.GetGeoTransform()
+    if not gtrans:
+        print("Failed to read dataset geotransform", file=sys.stderr)
+        sys.exit(1)
+
+    rasterSpatialRef = osr.SpatialReference()
+    if rasterSpatialRef.ImportFromWkt(raster.GetProjectionRef()) != ogr.OGRERR_NONE:
+        print("Failed to parse dataset projection", file=sys.stderr)
+        sys.exit(1)
+
+    band = raster.GetRasterBand(1)
+    if not band:
+        print("Failed to open dataset raster band", file=sys.stderr)
+        sys.exit(1)
+
+    rasterUnitsToMeters = 1
+    if band.GetUnitType() == "ft":
+        rasterUnitsToMeters = 0.3048
+
+    dataset = {
+        "raster": raster,
+        "band": band,
+        "spatialRef": rasterSpatialRef,
+        "geoTransform": gtrans,
+        "unitsToMeters": rasterUnitsToMeters
+    }
 
     app.run(debug=True, port=5002)
