@@ -48,7 +48,7 @@ API:
 Elevation service
 -----------------
 
-Returns elevations between along a line.
+Returns elevations.
 
 Run as
 
@@ -56,7 +56,11 @@ Run as
 
 API:
 * Runs by default on `http://localhost:5002`
-* `POST: /`
+* `GET: /getelevation?pos=<pos>&crs=<crs>`
+  - *pos*: the query position, as `x,y`
+  - *crs*: the crs of the query position
+  - *output*: a json document with the elevation in meters: `{elevation: h}`
+* `POST: /getheightprofile`
   - *payload*: a json document as follows:
 
         {
@@ -67,3 +71,19 @@ API:
         }
 
   - *output*: a json document with heights in meters: `{elevations: [h1, h2, ...]}`
+
+Map info service
+----------------
+
+Returns additional information for the right-click map-info tooltip.
+
+Run as
+
+    python mapInfo.py
+
+API:
+* Runs by default on `http://localhost:5003`
+* `GET: /?pos=<pos>&crs=<crs>`
+  - *pos*: the query position, as `x,y`
+  - *crs*: the crs of the query position
+  - *output*: a json document with map info for the specified position: `{results: [[title1, value1], [title2, value2], ...]}`
