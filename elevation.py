@@ -5,7 +5,7 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-from flask import Flask, request, jsonify
+from flask import Flask, g, abort, request, Response, jsonify
 from flask_cors import CORS
 from itertools import accumulate
 from osgeo import gdal
@@ -19,7 +19,48 @@ import sys
 
 app = Flask(__name__)
 CORS(app)
-dataset = None
+
+
+def get_dataset():
+    dataset = getattr(g, '_dataset', None)
+    if dataset is None:
+        dataset = g._dataset = load_dataset()
+    return dataset
+
+
+def load_dataset():
+    dsfn = os.environ.get('ELEVATION_DATASET')
+    if dsfn is None:
+        abort(Response('ELEVATION_DATASET undefined', 500))
+
+    raster = gdal.Open(dsfn)
+    if not raster:
+        abort(Response('Failed to open dataset', 500))
+
+    gtrans = raster.GetGeoTransform()
+    if not gtrans:
+        abort(Response('Failed to read dataset geotransform', 500))
+
+    rasterSpatialRef = osr.SpatialReference()
+    if rasterSpatialRef.ImportFromWkt(raster.GetProjectionRef()) != ogr.OGRERR_NONE:
+        abort(Response('Failed to parse dataset projection', 500))
+
+    band = raster.GetRasterBand(1)
+    if not band:
+        abort(Response('Failed to open dataset raster band', 500))
+
+    rasterUnitsToMeters = 1
+    if band.GetUnitType() == "ft":
+        rasterUnitsToMeters = 0.3048
+
+    dataset = {
+        "raster": raster,
+        "band": band,
+        "spatialRef": rasterSpatialRef,
+        "geoTransform": gtrans,
+        "unitsToMeters": rasterUnitsToMeters
+    }
+    return dataset
 
 
 @app.route("/getelevation", methods=['GET'])
@@ -28,6 +69,7 @@ dataset = None
 # crs: the crs of the query position
 # output: a json document with the elevation in meters: `{elevation: h}`
 def getelevation():
+    dataset = get_dataset()
     try:
         pos = request.args['pos'].split(',')
         pos = [float(pos[0]), float(pos[1])]
@@ -73,6 +115,7 @@ def getelevation():
 #        }
 # output: a json document with heights in meters: `{elevations: [h1, h2, ...]}`
 def getheightprofile():
+    dataset = get_dataset()
     query = request.json
 
     if not isinstance(query, dict) or not "projection" in query or not "coordinates" in query or not "distances" in query or not "samples" in query:
@@ -145,40 +188,4 @@ def getheightprofile():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or not os.path.exists(sys.argv[1]):
-        print("Usage: %s dtm.tif" % sys.argv[0], file=sys.stderr)
-        sys.exit(1)
-
-    raster = gdal.Open(sys.argv[1])
-    if not raster:
-        print("Failed to open dataset", file=sys.stderr)
-        sys.exit(1)
-
-    gtrans = raster.GetGeoTransform()
-    if not gtrans:
-        print("Failed to read dataset geotransform", file=sys.stderr)
-        sys.exit(1)
-
-    rasterSpatialRef = osr.SpatialReference()
-    if rasterSpatialRef.ImportFromWkt(raster.GetProjectionRef()) != ogr.OGRERR_NONE:
-        print("Failed to parse dataset projection", file=sys.stderr)
-        sys.exit(1)
-
-    band = raster.GetRasterBand(1)
-    if not band:
-        print("Failed to open dataset raster band", file=sys.stderr)
-        sys.exit(1)
-
-    rasterUnitsToMeters = 1
-    if band.GetUnitType() == "ft":
-        rasterUnitsToMeters = 0.3048
-
-    dataset = {
-        "raster": raster,
-        "band": band,
-        "spatialRef": rasterSpatialRef,
-        "geoTransform": gtrans,
-        "unitsToMeters": rasterUnitsToMeters
-    }
-
     app.run(debug=True, port=5002)

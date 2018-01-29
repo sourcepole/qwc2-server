@@ -52,9 +52,9 @@ Returns elevations.
 
 Run as
 
-    python elevation.py <path/to/dtm.tif>
+    ELEVATION_DATASET=<path/to/dtm.tif> python elevation.py
 
-Requires GDAL Python bindings. `python-gdal` or `python3-gdal` packages on Debian/Ubuntu.
+Requires GDAL Python bindings. `python-gdal` or `python3-gdal` packages on Debian/Ubuntu (Note: virtualenv creation requires --system-site-packages option).
 
 API:
 * Runs by default on `http://localhost:5002`
