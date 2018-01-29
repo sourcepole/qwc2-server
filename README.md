@@ -54,6 +54,8 @@ Run as
 
     python elevation.py <path/to/dtm.tif>
 
+Requires GDAL Python bindings. `python-gdal` or `python3-gdal` packages on Debian/Ubuntu.
+
 API:
 * Runs by default on `http://localhost:5002`
 * `GET: /getelevation?pos=<pos>&crs=<crs>`
