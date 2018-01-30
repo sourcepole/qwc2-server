@@ -42,7 +42,7 @@ def load_dataset():
         abort(Response('Failed to read dataset geotransform', 500))
 
     rasterSpatialRef = osr.SpatialReference()
-    if rasterSpatialRef.ImportFromWkt(raster.GetProjectionRef()) != ogr.OGRERR_NONE:
+    if rasterSpatialRef.ImportFromWkt(raster.GetProjectionRef()) != 0:
         abort(Response('Failed to parse dataset projection', 500))
 
     band = raster.GetRasterBand(1)
@@ -81,7 +81,7 @@ def getelevation():
         return jsonify({"error": "Invalid projection specified"})
 
     inputSpatialRef = osr.SpatialReference()
-    if inputSpatialRef.ImportFromEPSG(epsg) != ogr.OGRERR_NONE:
+    if inputSpatialRef.ImportFromEPSG(epsg) != 0:
         return jsonify({"error": "Failed to parse projection"})
 
     crsTransform = osr.CoordinateTransformation(inputSpatialRef, dataset["spatialRef"])
@@ -138,7 +138,7 @@ def getheightprofile():
         return jsonify({"error": "Invalid sample count specified"})
 
     inputSpatialRef = osr.SpatialReference()
-    if inputSpatialRef.ImportFromEPSG(epsg) != ogr.OGRERR_NONE:
+    if inputSpatialRef.ImportFromEPSG(epsg) != 0:
         return jsonify({"error": "Failed to parse projection"})
 
     crsTransform = osr.CoordinateTransformation(inputSpatialRef, dataset["spatialRef"])
