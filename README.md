@@ -89,3 +89,19 @@ API:
   - *pos*: the query position, as `x,y`
   - *crs*: the crs of the query position
   - *output*: a json document with map info for the specified position: `{results: [[title1, value1], [title2, value2], ...]}`
+
+Feature report service
+----------------------
+
+Generates a report (i.e. could be a PDF document) for a feature based on a feature id any layer id.
+
+Run as
+
+    python featureReport.py
+
+API:
+* Runs by default on `http://localhost:5020`
+* `GET: /?layer=<layer>&feature=<feature>`
+  - *layer*: a layer ID
+  - *feature*: a feature ID
+  - *output*: A blob with matching content-type
