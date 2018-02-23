@@ -93,7 +93,7 @@ API:
 Feature report service
 ----------------------
 
-Generates a report (i.e. could be a PDF document) for a feature based on a feature id any layer id.
+Generates a report (i.e. could be a PDF document) for a feature using the specified template.
 
 Run as
 
@@ -101,7 +101,7 @@ Run as
 
 API:
 * Runs by default on `http://localhost:5020`
-* `GET: /?layer=<layer>&feature=<feature>`
-  - *layer*: a layer ID
+* `GET: /?template=<template>&feature=<feature>`
+  - *template*: a template ID
   - *feature*: a feature ID
   - *output*: A blob with matching content-type

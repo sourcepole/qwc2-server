@@ -13,10 +13,14 @@ app = Flask(__name__)
 CORS(app)
 
 @app.route("/")
+# `/?template=<template>&feature=<feature>`
+# template: a template ID
+# feature: a feature ID
+# output: A blob with matching content-type
 def featurereport():
-    layer = request.args['layer']
+    template = request.args['template']
     feature = request.args['feature']
-    return Response("Feature report for feature %s of layer %s" % (feature,layer), mimetype='text/plain')
+    return Response("Feature report for feature %s, using template %s" % (feature, template), mimetype='text/plain')
 
 
 if __name__ == "__main__":
