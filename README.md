@@ -104,4 +104,7 @@ API:
 * `GET: /?template=<template>&feature=<feature>`
   - *template*: a template ID
   - *feature*: a feature ID
+  - *x*: x coordinate of click which selected the feature                                                                                                        
+  - *y*: y coordinate of click which selected the feature                                                                                                        
+  - *crs*: crs of click coordinates
   - *output*: A blob with matching content-type

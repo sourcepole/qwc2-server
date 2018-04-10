@@ -16,11 +16,17 @@ CORS(app)
 # `/?template=<template>&feature=<feature>`
 # template: a template ID
 # feature: a feature ID
+# x: x coordinate of click which selected the feature
+# y: y coordinate of click which selected the feature
+# crs: crs of click coordinates
 # output: A blob with matching content-type
 def featurereport():
     template = request.args['template']
     feature = request.args['feature']
-    return Response("Feature report for feature %s, using template %s" % (feature, template), mimetype='text/plain')
+    x = request.args['x']
+    y = request.args['y']
+    crs = request.args['crs']
+    return Response("Feature report for feature %s (at %s, %s %s), using template %s" % (feature, x, y, crs, template), mimetype='text/plain')
 
 
 if __name__ == "__main__":
