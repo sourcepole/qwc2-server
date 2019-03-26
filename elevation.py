@@ -151,8 +151,6 @@ def getheightprofile():
     p1 = query["coordinates"][i]
     p2 = query["coordinates"][i + 1]
     dr = (p2[0] - p1[0], p2[1] - p1[1])
-    n = math.sqrt(dr[0] * dr[0] + dr[1] * dr[1])
-    dr = [dr[0] / n, dr[1] / n]
     cumDistances = list(accumulate(query["distances"]))
     cumDistances.insert(0, 0)
     totDistance = sum(query["distances"])
@@ -162,10 +160,8 @@ def getheightprofile():
             p1 = query["coordinates"][i]
             p2 = query["coordinates"][i + 1]
             dr = (p2[0] - p1[0], p2[1] - p1[1])
-            n = math.sqrt(dr[0] * dr[0] + dr[1] * dr[1])
-            dr = [dr[0] / n, dr[1] / n]
 
-        mu = x - cumDistances[i]
+        mu = (x - cumDistances[i]) / (cumDistances[i+1] - cumDistances[i])
         pRaster = crsTransform.TransformPoint(p1[0] + mu * dr[0], p1[1] + mu * dr[1])
 
         # Geographic coordinates to pixel coordinates
